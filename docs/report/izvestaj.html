@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+<meta charset="utf-8">
+<title>Дијагностика на дефект кај компјутер според симптом</title>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true });
+</script>
+<style>
+  body { font-family: "Segoe UI", sans-serif; max-width: 820px; margin: 2rem auto; line-height: 1.5; color: #1a1a1a; }
+  code { font-family: Consolas, monospace; }
+  pre { background: #f4f4f4; padding: 0.8rem; overflow-x: auto; }
+  h1, h2, h3 { line-height: 1.25; }
+</style>
+</head>
+<body>
+<h1>Дијагностика на дефект кај компјутер според симптом</h1>
+<p>Никола Христовски, ИНКИ961  </p>
+<p>Системи базирани на знаење</p>
+<h2>1. Вовед</h2>
+<h3>1.1 Проблем</h3>
+<p>Корисникот гледа симптом: уредот не свети, дискот чука или Wi-Fi се кине. Од тој знак не се гледа веднаш кој дел е неисправен, ниту зошто еден дефект е поверојатен од друг. Проверката дел по дел одзема време и лесно се прескокнува знак што ги разделува две слични причини.</p>
+<h3>1.2 Цел</h3>
+<p>Целта е систем базиран на знаење што од избрани симптоми дава рангирана дијагноза, објаснување кои правила се активирале и конкретни проверки. Знаењето е одвоено од машината за заклучување, за ново правило да се додаде без промена на екранот.</p>
+<h3>1.3 Опсег</h3>
+<p>Системот покрива еден компјутер и чести дефекти по осум потсистеми: напојување, бутање, екран, диск, меморија, мрежа, перформанси и периферни уреди. Не мери хардвер, не учи од примери и не чува историја на корисници. Нема база на податоци: правилата се во една YAML датотека.</p>
+<h2>2. Главен дел</h2>
+<h3>2.1 Опис на апликацијата</h3>
+<p>Апликацијата е експертски систем во Python. <code>app.py</code> ја пушта Streamlit страницата. <code>streamlit_app</code> ги повикува само <code>catalog</code> и <code>diagnose</code> на <code>DiagnoseComputer</code>. <code>composition.py</code> ги создава <code>YamlKnowledgeRepository</code>, <code>ForwardChainingEngine</code> и <code>DiagnoseComputer</code>. Репозиториумот ја чита <code>knowledge/computer_faults.yaml</code> при секое вчитување. Машината не ја отвора датотеката сама.</p>
+<p>Корисникот штиклира симптоми по потсистем или притиска примерен случај, кој само ги избира симптомите и ја брише претходната дијагноза. Над копчињата стојат бројот и називите на избраните симптоми. Потоа притиска „Дијагностицирај“. „Исчисти“ ги трга штиклирањата и зачуваниот резултат. Резултатот е рангирана листа од картички со ред, статус, процент, објаснување, препораки и трага.</p>
+<h3>2.2 Use case сценарио и use case дијаграм</h3>
+<p>Акторот е корисникот.</p>
+<p>Главно сценарио:</p>
+<p>1. Корисникот ја отвора апликацијата и екранот го вчитува каталогот.</p>
+<p>2. Ги отвора потсистемите и ги избира симптомите што ги гледа, или притиска примерен случај.</p>
+<p>3. Го чита бројот и називите на избраните симптоми.</p>
+<p>4. Притиска „Дијагностицирај“.</p>
+<p>5. Чита рангирани картички со објаснување и препорачани проверки.</p>
+<p>6. Во „Како се дојде до заклучокот“ ги гледа, за секое правило, објаснувањето, процентот и совпаднатите, недостасувачките и противречните називи.</p>
+<p>Ако не е избран ниту еден симптом, екранот покажува „Избери барем еден симптом.“ и не го повикува use case. Ако ниту едно правило не го достигнува прагот 0,5, екранот јавува дека нема доволно совпаѓање и ги наведува избраните називи. „Исчисти“ го враќа екранот на празен избор.</p>
+<pre class="mermaid">flowchart LR
+  user[Корисник]
+  sample[Бира примерен случај]
+  select[Избира симптоми]
+  diagnose[Поставува дијагноза]
+  trace[Ја чита трагата]
+  advice[Ги чита препораките]
+  clear[Го чисти изборот]
+  user --&gt; sample
+  sample --&gt; select
+  user --&gt; select
+  user --&gt; diagnose
+  user --&gt; trace
+  user --&gt; advice
+  user --&gt; clear</pre>
+<h3>2.3 Компонентен дијаграм и интеграциски интерфејси</h3>
+<p>Компонентите се <code>app.py</code>, <code>streamlit_app</code>, <code>composition</code>, <code>DiagnoseComputer</code>, <code>ForwardChainingEngine</code>, <code>YamlKnowledgeRepository</code> и <code>knowledge/computer_faults.yaml</code>.</p>
+<p>Интерфејсите се:</p>
+<ul>
+<li><code>catalog() -&gt; KnowledgeBase</code> од екранот кон use case и од use case кон машината</li>
+<li><code>diagnose(selected_symptom_ids) -&gt; DiagnosisResult</code> од екранот кон use case</li>
+<li><code>infer(evidence: Evidence) -&gt; DiagnosisResult</code> од use case кон машината</li>
+<li><code>load() -&gt; KnowledgeBase</code> од машината кон репозиториумот</li>
+</ul>
+<pre class="mermaid">flowchart LR
+  app[app.py]
+  ui[streamlit_app]
+  composition[composition]
+  useCase[DiagnoseComputer]
+  engine[ForwardChainingEngine]
+  repository[YamlKnowledgeRepository]
+  file[computer_faults.yaml]
+
+  app --&gt;|&quot;main()&quot;| ui
+  composition --&gt;|&quot;build_diagnose_computer()&quot;| ui
+  ui --&gt;|&quot;catalog() -&gt; KnowledgeBase&quot;| useCase
+  ui --&gt;|&quot;diagnose(selected_symptom_ids) -&gt; DiagnosisResult&quot;| useCase
+  useCase --&gt;|&quot;catalog() -&gt; KnowledgeBase&quot;| engine
+  useCase --&gt;|&quot;infer(evidence: Evidence) -&gt; DiagnosisResult&quot;| engine
+  engine --&gt;|&quot;load() -&gt; KnowledgeBase&quot;| repository
+  repository --&gt;|&quot;read&quot;| file</pre>
+<h3>2.4 Секвенциски дијаграми</h3>
+<p>При симптоми <code>no_power_led</code>, <code>no_fans</code> и <code>psu_clicks</code>, машината прво го активира <code>rule_power_path_dead</code> и го додава фактот <code>power_path_dead</code>. Потоа <code>rule_faulty_psu</code> дава потврдена дијагноза „Неисправно напојување“.</p>
+<pre class="mermaid">sequenceDiagram
+  actor User as Корисник
+  participant UI as streamlit_app
+  participant UseCase as DiagnoseComputer
+  participant Engine as ForwardChainingEngine
+  participant Repository as YamlKnowledgeRepository
+
+  UI-&gt;&gt;UseCase: catalog()
+  UseCase-&gt;&gt;Engine: catalog()
+  Engine-&gt;&gt;Repository: load()
+  Repository--&gt;&gt;Engine: KnowledgeBase
+  Engine--&gt;&gt;UseCase: KnowledgeBase
+  UseCase--&gt;&gt;UI: KnowledgeBase
+  User-&gt;&gt;UI: no_power_led, no_fans, psu_clicks
+  User-&gt;&gt;UI: Дијагностицирај
+  UI-&gt;&gt;UseCase: diagnose(selected_symptom_ids)
+  UseCase-&gt;&gt;Engine: infer(evidence)
+  Engine-&gt;&gt;Repository: load()
+  Repository--&gt;&gt;Engine: KnowledgeBase
+  Engine-&gt;&gt;Engine: rule_power_path_dead
+  Engine-&gt;&gt;Engine: rule_faulty_psu
+  Engine--&gt;&gt;UseCase: DiagnosisResult
+  UseCase--&gt;&gt;UI: DiagnosisResult
+  UI--&gt;&gt;User: Неисправно напојување</pre>
+<p>Ако копчето се притисне без симптом, пораката останува на екранот и <code>DiagnoseComputer</code> не се повикува.</p>
+<pre class="mermaid">sequenceDiagram
+  actor User as Корисник
+  participant UI as streamlit_app
+
+  User-&gt;&gt;UI: Дијагностицирај
+  UI--&gt;&gt;User: Избери барем еден симптом.</pre>
+<h3>2.5 База на знаење и правила</h3>
+<p>Каталогот има 8 потсистеми, 34 симптоми, 16 дефекти, 2 факти и 25 правила. Правилото има <code>when_present</code>, <code>when_absent</code>, заклучок од вид <code>fact</code> или <code>fault</code>, објаснување и препораки. Правилата за факти немаат препораки. Тие носат меѓучекор што подоцна го користи правило за дефект.</p>
+<p>Пример за синџир: <code>no_power_led</code> и <code>no_fans</code>, без <code>burning_smell</code>, го заклучуваат фактот <code>power_path_dead</code>. Ако во меморијата е и <code>psu_clicks</code>, <code>rule_faulty_psu</code> заклучува дефект <code>faulty_psu</code>. Вториот факт, <code>memory_subsystem_suspect</code>, на ист начин ги врзува звучните сигнали при бутање со правилата за меморија.</p>
+<h3>2.6 Inference engine</h3>
+<p><code>ForwardChainingEngine</code> е forward chaining. Работната меморија почнува со избраните симптоми. За секое правило:</p>
+<p><code>score = исполнети услови / сите услови</code></p>
+<p>Услов од <code>when_present</code> е исполнет ако идентификаторот е во меморијата. Услов од <code>when_absent</code> е исполнет ако не е. Противречен симптом е избран симптом што правилото го бара како отсутен, па тој услов не влегува во броителот и резултатот е понизок.</p>
+<p>Правило со резултат 1 е целосно активирано. Ако заклучува факт, фактот влегува во меморијата и прегледот на правилата почнува одново. Факт не се прикажува како дијагноза. Во трагата на дефект влегува само ако тој дефект го користи и правилото за фактот е целосно активирано.</p>
+<p>Дефект се прикажува ако некое негово правило има резултат од најмалку 0,5 и барем еден баран елемент е во меморијата. Резултатот на дијагнозата е највисокиот резултат меѓу правилата за тој дефект. Резултат 1 е статус потврдена. Резултат од 0,5 до под 1 е можна. Листата е подредена по опаѓачки резултат, а при ист резултат по идентификатор на дефектот.</p>
+<p>Пример: <code>thermal_shutdown</code>, <code>loud_fans_hot</code> и <code>no_fans</code>. Правилото <code>rule_overheating</code> бара два симптома и бара <code>no_fans</code> да отсуствува. Два од три услови се исполнети, резултатот е 2/3, и дијагнозата за прегревање е можна, не потврдена.</p>
+<h3>2.7 Резултати: влезови и излези</h3>
+<p>Влез се нула или повеќе симптоми од каталогот. Корисникот ги избира на екранот. Идентификатор што не е симптом ја подига <code>UnknownSymptomError</code>, а екранот јавува дека симптомот не постои во базата.</p>
+<p>Пред првата дијагноза екранот пишува „Избери симптоми и притисни Дијагностицирај.“ Примерен случај не повикува <code>diagnose</code>. „Исчисти“ го брише изборот и резултатот.</p>
+<p>Излезот е еден од трите:</p>
+<ul>
+<li>предупредување „Избери барем еден симптом.“ кога ништо не е избрано</li>
+<li>порака „Нема доволно совпаѓање со познатите дефекти.“ и листа на избраните називи</li>
+<li>рангирана листа од картички, а секоја носи ред, назив, резиме, статус „Потврдена“ или „Можна“, процент, објаснување и препораки. Трагата за секое правило носи објаснување, процент на тоа правило и називи што се совпаднати, што недостасуваат и што се противречни</li>
+</ul>
+<p>Ако изборот се смени по дијагнозата, старите картички не остануваат. Екранот бара повторно притискање на копчето.</p>
+<h2>3. Заклучок</h2>
+<p>Системот од симптоми стигнува до рангиран дефект и покажува кое правило го донело заклучокот. Тоа е доволно за демонстрација на база на знаење, работна меморија и forward chaining. Границата е што каталогот ги покрива честите дефекти, не секој можен квар на секој уред.</p>
+<h2>4. Референци</h2>
+<p>1. Putri Sakinah, Yomei Hendra, Budy Satria, Zumardi Rahman, Fajar Maulana и Aldo Eko Syaputra. Implementation of a Forward Chaining Expert System in Diagnosing Laptop Damage. Internet of Things and Artificial Intelligence Journal, Vol. 4, No. 3, 2024. https://doi.org/10.31763/iota.v4i3.791. Пристапено: 15 октомври 2026.</p>
+<p>   Причина: Го покажува истиот пристап, forward chaining од симптоми до дефект, на близок домен (лаптоп).</p>
+<p>2. Muhammad Rehan Anwar. Analysis of Expert System Implementation in Computer Damage Diagnosis with Forward Chaining Method. International Transactions on Artificial Intelligence (ITALIC), Vol. 1, No. 2, May 2023, pp. 139–155. https://doi.org/10.33050/italic.v1i2.213. Пристапено: 15 октомври 2026.</p>
+<p>   Причина: Ја врзува дијагнозата на компјутерски дефект со споредба на фактите со запишани правила.</p>
+<p>3. Longfei Song, Yuqing Chen и Zhenjun Jin. Design of fault diagnosis expert system based on fault tree and production rules. Chinese Journal of Ship Research, објавено на 30 јануари 2024. https://www.ship-research.com/en/article/doi/10.19693/j.issn.1673-3185.03608. Пристапено: 15 октомври 2026.</p>
+<p>   Причина: Објаснува како искуството се пренесува во продукциски правила и inference engine, што е обликот на базата во овој проект.</p>
+<p>4. Python Software Foundation. dataclasses — Data Classes. Python 3 documentation. https://docs.python.org/3/library/dataclasses.html. Пристапено: 15 октомври 2026.</p>
+<p>   Причина: Доменските типови се непроменливи dataclass-ови, и страницата е изворот за тој договор.</p>
+<p>5. Streamlit. Streamlit documentation. https://docs.streamlit.io/. Пристапено: 15 октомври 2026.</p>
+<p>   Причина: Екранот е Streamlit адаптер, а документацијата го опишува начинот на кој се пушта апликацијата.</p>
+<p>6. PyYAML. PyYAML Documentation. https://pyyaml.org/wiki/PyYAMLDocumentation. Пристапено: 15 октомври 2026.</p>
+<p>   Причина: Базата на знаење се чита од YAML, а документацијата го покрива <code>safe_load</code> што го користи репозиториумот.</p>
+</body>
+</html>
