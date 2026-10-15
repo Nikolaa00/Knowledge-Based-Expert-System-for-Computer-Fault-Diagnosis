@@ -210,4 +210,198 @@ faults:
     name_mk: Неисправна тастатура
     summary_mk: Тастатурата повторува знаци или не реагира на сите типки.
 
-rules: []
+rules:
+  - id: rule_power_path_dead
+    when_present: [no_power_led, no_fans]
+    when_absent: [burning_smell]
+    conclude: {kind: fact, id: power_path_dead}
+    explanation_mk: Нема светло и нема вртење на вентилаторите, без мирис на изгорено. Плочата не добива струја.
+    recommendations_mk: []
+  - id: rule_faulty_psu
+    when_present: [power_path_dead, psu_clicks]
+    when_absent: [works_after_reseating_cable]
+    conclude: {kind: fault, id: faulty_psu}
+    explanation_mk: Патеката на струја е мртва, а напојувањето кликнува и се гаси. Тоа е знак за неисправно напојување.
+    recommendations_mk:
+      - Исклучи го кабелот и провери дали има мирис на изгорено пред повторно вклучување.
+      - Испитај со друго познато исправно напојување.
+  - id: rule_loose_cable
+    when_present: [power_path_dead, works_after_reseating_cable]
+    when_absent: [psu_clicks]
+    conclude: {kind: fault, id: loose_power_cable}
+    explanation_mk: Струјата се појавува дури откако кабелот ќе се помрдне. Контактот на кабелот е лабав.
+    recommendations_mk:
+      - Замени го кабелот за напојување.
+      - Провери ја утичницата и продолжниот кабел со друг уред.
+  - id: rule_burnt_component
+    when_present: [burning_smell]
+    when_absent: [works_after_reseating_cable]
+    conclude: {kind: fault, id: burnt_component}
+    explanation_mk: Се чувствува мирис на изгорено. Не вклучувај го уредот повторно.
+    recommendations_mk:
+      - Остави го уредот исклучен од струја.
+      - Отвори го само ако знаеш што бараш, или однеси го на преглед.
+  - id: rule_boot_loop_psu
+    when_present: [restarts_before_os, psu_clicks]
+    when_absent: [burning_smell, no_power_led, no_fans]
+    conclude: {kind: fault, id: faulty_psu}
+    explanation_mk: Уредот се рестартира пред системот, а напојувањето кликнува. Напојувањето не ја држи струјата.
+    recommendations_mk:
+      - Исклучи ги непотребните USB уреди и пробај уште еднаш.
+      - Ако кликот остане, замени го напојувањето.
+  - id: rule_memory_suspect
+    when_present: [no_post, beeps_continuous]
+    when_absent: []
+    conclude: {kind: fact, id: memory_subsystem_suspect}
+    explanation_mk: Нема POST, а звучникот писка без прекин. Плочата укажува на меморија.
+    recommendations_mk: []
+  - id: rule_memory_suspect_long_beep
+    when_present: [no_post, beeps_one_long]
+    when_absent: []
+    conclude: {kind: fact, id: memory_subsystem_suspect}
+    explanation_mk: Нема POST и се слуша еден долг сигнал. Проверката застанува на меморијата.
+    recommendations_mk: []
+  - id: rule_loose_ram
+    when_present: [memory_subsystem_suspect, passes_one_stick]
+    when_absent: [memtest_errors]
+    conclude: {kind: fault, id: loose_ram}
+    explanation_mk: Со една плочка бута, а тестот не јавува грешка. Контактот на плочката е поверојатен од изгорена меморија.
+    recommendations_mk:
+      - Извади ги плочките, исчисти го контактот и намести ги повторно.
+      - Пробај ја секоја плочка во првиот слот.
+  - id: rule_faulty_ram
+    when_present: [memory_subsystem_suspect, memtest_errors]
+    when_absent: []
+    conclude: {kind: fault, id: faulty_ram}
+    explanation_mk: Знакот при бутање води до меморија, а MemTest потврдува грешки.
+    recommendations_mk:
+      - Тестирај ја секоја плочка одделно.
+      - Замени ја плочката што јавува грешка.
+  - id: rule_faulty_ram_bsod
+    when_present: [bsod_memory, random_freeze]
+    when_absent: [thermal_shutdown]
+    conclude: {kind: fault, id: faulty_ram}
+    explanation_mk: Син екран за меморија и замрзнување, без гасење од топлина. Меморијата е неисправна.
+    recommendations_mk:
+      - Пушти MemTest од USB.
+      - Ако грешката се повторува на една плочка, замени ја.
+  - id: rule_cmos_battery
+    when_present: [bios_resets]
+    when_absent: [no_power_led]
+    conclude: {kind: fault, id: dead_cmos_battery}
+    explanation_mk: Поставките се губат иако уредот инаку добива струја. CMOS батеријата не држи.
+    recommendations_mk:
+      - Замени ја CR2032 батеријата на плочата.
+      - По замена постави датум и провери дали се задржува.
+  - id: rule_faulty_gpu
+    when_present: [artifacts, stutter_games]
+    when_absent: [external_display_ok]
+    conclude: {kind: fault, id: faulty_gpu}
+    explanation_mk: Има артефакти и сецкање во 3D, а сликата не е добра ни на друг екран.
+    recommendations_mk:
+      - Извади ја картичката и намести ја повторно.
+      - Пробај со друга картичка или со вградената графика.
+  - id: rule_no_signal_gpu
+    when_present: [no_signal, no_post]
+    when_absent: [no_power_led]
+    conclude: {kind: fault, id: faulty_gpu}
+    explanation_mk: Струја има, но нема POST ниту видеосигнал. Графичкиот излез не тргнува.
+    recommendations_mk:
+      - Провери дали кабелот е во картичката, не во плочата.
+      - Отстрани ја дискретната картичка и пробај со вградената графика.
+  - id: rule_display_panel
+    when_present: [backlight_only, external_display_ok]
+    when_absent: []
+    conclude: {kind: fault, id: faulty_display_panel}
+    explanation_mk: Надворешниот екран е добар, а вградениот панел останува црн. Панелот или неговиот кабел е неисправен.
+    recommendations_mk:
+      - Провери го кабелот на панелот ако уредот се отвора лесно.
+      - Користи надворешен монитор до замена на панелот.
+  - id: rule_failing_disk
+    when_present: [clicking_disk, slow_boot_disk]
+    when_absent: []
+    conclude: {kind: fault, id: failing_disk}
+    explanation_mk: Дискот чука и бутањето е долго. Тоа е механички знак дека дискот откажува.
+    recommendations_mk:
+      - Не инсталирај систем одново пред да ги ископираш важните податоци.
+      - Замени го дискот и провери го стариот од друг компјутер само за копирање.
+  - id: rule_smart_disk
+    when_present: [smart_warning, slow_boot_disk]
+    when_absent: []
+    conclude: {kind: fault, id: failing_disk}
+    explanation_mk: Системот предупредува за дискот, а бутањето е бавно. Дискот откажува.
+    recommendations_mk:
+      - Ископирај ги податоците веднаш.
+      - Замени го дискот; не го игнорирај предупредувањето.
+  - id: rule_corrupted_filesystem
+    when_present: [files_disappear, slow_boot_disk]
+    when_absent: [clicking_disk]
+    conclude: {kind: fault, id: corrupted_filesystem}
+    explanation_mk: Датотеките не се отвораат и бутањето е бавно, без чукање. Датотечниот систем е оштетен.
+    recommendations_mk:
+      - Пушти проверка на дискот од системот.
+      - Прекини го запишувањето додека не се ископира она што сè уште се отвора.
+  - id: rule_wifi_adapter
+    when_present: [no_wifi, other_devices_online]
+    when_absent: [ethernet_dead]
+    conclude: {kind: fault, id: faulty_wifi_adapter}
+    explanation_mk: Другите уреди ја гледаат мрежата, а овој не прикажува ниту една Wi-Fi мрежа.
+    recommendations_mk:
+      - Вклучи го адаптерот со функциското копче или од поставките.
+      - Ако и по драјвер не гледа мрежа, адаптерот е неисправен.
+  - id: rule_wifi_drops
+    when_present: [wifi_drops, other_devices_online]
+    when_absent: []
+    conclude: {kind: fault, id: faulty_wifi_adapter}
+    explanation_mk: Врската се кине само на овој уред. Безжичниот адаптер не ја држи мрежата.
+    recommendations_mk:
+      - Заборави ја мрежата и поврзи се повторно.
+      - Пробај USB адаптер за да видиш дали вградениот откажува.
+  - id: rule_ethernet
+    when_present: [ethernet_dead, other_devices_online]
+    when_absent: [no_wifi]
+    conclude: {kind: fault, id: bad_ethernet_cable_or_port}
+    explanation_mk: Кабелот не добива адреса, а другите уреди се на мрежа. Кабелот или портата не ја носат врската.
+    recommendations_mk:
+      - Пробај друг кабел и друга порта на рутерот.
+      - Ако друг кабел работи, замени го кабелот; ако не работи, портата на компјутерот е сомнителна.
+  - id: rule_overheating
+    when_present: [thermal_shutdown, loud_fans_hot]
+    when_absent: [no_fans]
+    conclude: {kind: fault, id: overheating}
+    explanation_mk: Вентилаторите работат гласно, воздухот е топол и уредот се гаси под товар.
+    recommendations_mk:
+      - Исчисти ја прашината и провери дали вентилаторот навистина се врти.
+      - Провери ја пастата и дали уредот има воздух околу отворите.
+  - id: rule_background_cpu
+    when_present: [high_cpu_idle]
+    when_absent: [thermal_shutdown]
+    conclude: {kind: fault, id: background_cpu_load}
+    explanation_mk: Процесорот е зафатен во мирување, без гасење од топлина. Товарот доаѓа од позадински процес.
+    recommendations_mk:
+      - Отвори го управувачот на задачи и подреди по процесор.
+      - Запри го процесот што троши и провери дали се враќа по рестарт.
+  - id: rule_usb_port
+    when_present: [usb_not_detected, works_on_other_port]
+    when_absent: []
+    conclude: {kind: fault, id: faulty_usb_port}
+    explanation_mk: Уредот се гледа на друга порта, значи уредот е исправен, а оваа порта не е.
+    recommendations_mk:
+      - Користи ја портата што работи.
+      - Ако повеќе порти на иста група не работат, провери го кабелот на предниот панел.
+  - id: rule_usb_power_only
+    when_present: [usb_power_only, usb_not_detected]
+    when_absent: []
+    conclude: {kind: fault, id: faulty_usb_port}
+    explanation_mk: Уредот добива струја, но системот не го препознава. Портата не ја носи податочната врска.
+    recommendations_mk:
+      - Пробај директно на порта од задниот панел.
+      - Избегни незасилен USB разгранувач за проверка.
+  - id: rule_keyboard
+    when_present: [keyboard_repeat]
+    when_absent: [works_on_other_port]
+    conclude: {kind: fault, id: faulty_keyboard}
+    explanation_mk: Тастатурата повторува или молчи и проблемот не исчезнува на друга порта.
+    recommendations_mk:
+      - Пробај друга тастатура на истата порта.
+      - Ако другата работи, замени ја тастатурата.
