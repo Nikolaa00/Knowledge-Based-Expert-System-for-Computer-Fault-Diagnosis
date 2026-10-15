@@ -25,6 +25,7 @@ class KnowledgeRepository(Protocol):
 
 class YamlKnowledgeRepository:
     """Load production rules from a YAML file on every call to ``load``."""
+
     def __init__(self, path: Path) -> None:
         self._path = path
 
