@@ -175,7 +175,7 @@ sequenceDiagram
 4. Python Software Foundation. dataclasses — Data Classes. Python 3 documentation. https://docs.python.org/3/library/dataclasses.html. Пристапено: 15 октомври 2026.
    Причина: Доменските типови се непроменливи dataclass-ови, и страницата е изворот за тој договор.
 
-5. Streamlit Inc. Streamlit documentation. https://docs.streamlit.io/. Пристапено: 15 октомври 2026.
+5. Streamlit. Streamlit documentation. https://docs.streamlit.io/. Пристапено: 15 октомври 2026.
    Причина: Екранот е Streamlit адаптер, а документацијата го опишува начинот на кој се пушта апликацијата.
 
 6. PyYAML. PyYAML Documentation. https://pyyaml.org/wiki/PyYAMLDocumentation. Пристапено: 15 октомври 2026.
