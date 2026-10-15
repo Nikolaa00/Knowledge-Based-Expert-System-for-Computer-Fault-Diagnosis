@@ -9,6 +9,13 @@ _STATUS_LABELS = {
     DiagnosisStatus.PARTIAL: "Можна",
 }
 
+_SAMPLE_CASES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("Неисправно напојување", ("no_power_led", "no_fans", "psu_clicks")),
+    ("Оштетен датотечен систем", ("slow_boot_disk",)),
+    ("Прегревање", ("thermal_shutdown", "loud_fans_hot")),
+    ("Неисправна меморија", ("no_post", "beeps_continuous", "memtest_errors")),
+)
+
 
 def main() -> None:
     st.set_page_config(page_title="Дијагностика на дефект кај компјутер", layout="wide")
@@ -29,13 +36,54 @@ def main() -> None:
         st.session_state.diagnosed_ids = ()
 
     labels = {symptom.id: symptom.label_mk for symptom in catalog.symptoms}
+    all_ids = tuple(symptom.id for symptom in catalog.symptoms)
     choice, result = st.columns(2)
     with choice:
+        _sample_cases(all_ids)
         selected = _symptom_picker(catalog)
-        if st.button("Дијагностицирај"):
+        _show_selection(selected, labels)
+        diagnose_col, clear_col = st.columns(2)
+        with diagnose_col:
+            diagnose_clicked = st.button("Дијагностицирај", use_container_width=True)
+        with clear_col:
+            st.button(
+                "Исчисти",
+                on_click=_clear_selection,
+                args=(all_ids,),
+                use_container_width=True,
+            )
+        if diagnose_clicked:
             _diagnose(computer, selected)
     with result:
         _show_result(selected, labels)
+
+
+def _sample_cases(all_ids: tuple[str, ...]) -> None:
+    with st.expander("Примерни случаи"):
+        st.caption("Избери случај, па притисни Дијагностицирај.")
+        for index, (label, symptom_ids) in enumerate(_SAMPLE_CASES):
+            st.button(
+                label,
+                key=f"sample-{index}",
+                on_click=_apply_sample,
+                args=(symptom_ids, all_ids),
+                use_container_width=True,
+            )
+
+
+def _apply_sample(symptom_ids: tuple[str, ...], all_ids: tuple[str, ...]) -> None:
+    chosen = set(symptom_ids)
+    for symptom_id in all_ids:
+        st.session_state[f"symptom-{symptom_id}"] = symptom_id in chosen
+    st.session_state.diagnosis = None
+    st.session_state.diagnosed_ids = ()
+
+
+def _clear_selection(all_ids: tuple[str, ...]) -> None:
+    for symptom_id in all_ids:
+        st.session_state[f"symptom-{symptom_id}"] = False
+    st.session_state.diagnosis = None
+    st.session_state.diagnosed_ids = ()
 
 
 def _symptom_picker(catalog: KnowledgeBase) -> list[str]:
@@ -57,6 +105,12 @@ def _symptom_picker(catalog: KnowledgeBase) -> list[str]:
     return selected
 
 
+def _show_selection(selected: list[str], labels: dict[str, str]) -> None:
+    st.write(f"Избрани симптоми: {len(selected)}")
+    for symptom_id in selected:
+        st.markdown(f"- {labels[symptom_id]}")
+
+
 def _diagnose(computer, selected: list[str]) -> None:
     if not selected:
         st.session_state.diagnosis = None
@@ -75,6 +129,7 @@ def _diagnose(computer, selected: list[str]) -> None:
 def _show_result(selected: list[str], labels: dict[str, str]) -> None:
     diagnosis = st.session_state.diagnosis
     if diagnosis is None:
+        st.info("Избери симптоми и притисни Дијагностицирај.")
         return
     if tuple(selected) != st.session_state.diagnosed_ids:
         st.write("Изборот е сменет. Притисни Дијагностицирај повторно.")
@@ -86,32 +141,41 @@ def _render_diagnosis(result: DiagnosisResult, labels: dict[str, str]) -> None:
     if not result.diagnoses:
         st.write("Нема доволно совпаѓање со познатите дефекти.")
         for symptom_id in st.session_state.diagnosed_ids:
-            st.write(labels.get(symptom_id, symptom_id))
+            st.markdown(f"- {labels[symptom_id]}")
         return
 
-    for diagnosis in result.diagnoses:
-        percent = int(diagnosis.score * 100 + 0.5)
-        st.subheader(diagnosis.fault.name_mk)
-        st.write(f"{_STATUS_LABELS[diagnosis.status]} · {percent}%")
-        st.write(diagnosis.fault.summary_mk)
-        for match in diagnosis.matches:
-            st.write(match.explanation_mk)
-        recommendations = []
-        for match in diagnosis.matches:
-            for recommendation in match.recommendations_mk:
-                if recommendation not in recommendations:
-                    recommendations.append(recommendation)
-        if recommendations:
-            st.markdown("\n".join(f"- {item}" for item in recommendations))
-        with st.expander("Како се дојде до заклучокот"):
+    for rank, diagnosis in enumerate(result.diagnoses, start=1):
+        percent = _percent(diagnosis.score)
+        with st.container(border=True):
+            st.subheader(f"{rank}. {diagnosis.fault.name_mk}")
+            st.write(f"{_STATUS_LABELS[diagnosis.status]} · {percent}%")
+            st.progress(percent / 100)
+            st.write(diagnosis.fault.summary_mk)
             for match in diagnosis.matches:
-                _write_items("Совпаднати", match.matched)
-                _write_items("Недостасуваат", match.missing)
-                _write_items("Противречни", match.contradicted)
+                st.write(match.explanation_mk)
+            recommendations: list[str] = []
+            for match in diagnosis.matches:
+                for recommendation in match.recommendations_mk:
+                    if recommendation not in recommendations:
+                        recommendations.append(recommendation)
+            if recommendations:
+                st.markdown("**Препораки**")
+                st.markdown("\n".join(f"- {item}" for item in recommendations))
+            with st.expander("Како се дојде до заклучокот"):
+                for match in diagnosis.matches:
+                    st.write(match.explanation_mk)
+                    st.write(f"{_percent(match.score)}%")
+                    _write_items("Совпаднати", match.matched)
+                    _write_items("Недостасуваат", match.missing)
+                    _write_items("Противречни", match.contradicted)
+
+
+def _percent(score: float) -> int:
+    return int(score * 100 + 0.5)
 
 
 def _write_items(title: str, items) -> None:
     if not items:
         return
-    names = ", ".join(item.label_mk for item in items)
-    st.write(f"{title}: {names}")
+    lines = "\n".join(f"- {item.label_mk}" for item in items)
+    st.markdown(f"**{title}**\n\n{lines}")
