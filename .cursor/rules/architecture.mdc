@@ -1,0 +1,51 @@
+---
+description: Граници на експертскиот систем за дијагностика на компјутерски дефект
+alwaysApply: true
+---
+
+# Архитектура
+
+Домен: дијагностика на дефект кај компјутер според симптоми. Python 3.11 и Streamlit. Знаењето е податок во `knowledge/computer_faults.yaml`, не гранки во кодот.
+
+Дрво:
+
+- `src/pc_fault_diagnosis/domain/models.py` — замрзнати dataclass модели
+- `src/pc_fault_diagnosis/domain/errors.py` — `UnknownSymptomError`, `KnowledgeBaseError`
+- `src/pc_fault_diagnosis/knowledge/repository.py` — `KnowledgeRepository`, `YamlKnowledgeRepository`
+- `src/pc_fault_diagnosis/inference/engine.py` — `InferenceEngine`, `ForwardChainingEngine`
+- `src/pc_fault_diagnosis/application/diagnose.py` — `DiagnoseComputer`
+- `src/pc_fault_diagnosis/composition.py` — единствено поврзување на конкретните класи
+- `src/pc_fault_diagnosis/ui/streamlit_app.py` — адаптер за екран
+- `app.py` — влез за Streamlit, само повик кон UI
+- `knowledge/computer_faults.yaml`
+- `tests/`
+- `docs/diagrams/`
+- `docs/report/`
+
+Дозволени повици:
+
+- UI смее да ги повика само `DiagnoseComputer.catalog` и `DiagnoseComputer.diagnose`
+- `DiagnoseComputer` смее да ги повика само `InferenceEngine.catalog` и `InferenceEngine.infer`
+- `ForwardChainingEngine` го повикува само `KnowledgeRepository.load`
+- `YamlKnowledgeRepository` го чита само YAML фајлот
+- `composition.py` е единственото место каде се создаваат `YamlKnowledgeRepository`, `ForwardChainingEngine` и `DiagnoseComputer`
+
+Протоколи се само `KnowledgeRepository` и `InferenceEngine`. Не додавај протокол, апстрактна класа или интерфејс за другите класи.
+
+Имиња на модули, фајлови, класи, методи, аргументи и променливи: англиски, `snake_case` за модули и функции, `PascalCase` за класи, `UPPER_SNAKE` за константи. Текстот за корисникот и извештајот: македонски.
+
+Формула, иста во машината и во тестовите:
+
+- услов од `when_present` е исполнет ако идентификаторот е во работната меморија
+- услов од `when_absent` е исполнет ако идентификаторот не е во работната меморија
+- `score = исполнети услови / сите услови`
+- противречен симптом е избран симптом што правилото го бара како отсутен; тој услов не е исполнет, па резултатот е понизок
+- факт влегува во работната меморија само кога правилото што го заклучува има `score == 1`
+- дефект се прикажува ако барем еден негов rule match има `score >= 0.5` и барем еден `when_present` елемент е во меморијата
+- статус `confirmed` само кога `score == 1`
+- статус `partial` кога `0.5 <= score < 1`
+- еден дефект се појавува еднаш; неговиот `score` е највисокиот меѓу правилата што водат до него
+
+Константи: `PARTIAL_SCORE_THRESHOLD = 0.5` во inference модулот. Не ја повторувај бројката низ UI.
+
+Не додавај база, најава, веб-сервис, машинско учење, Bayesian мрежа, MYCIN аритметика, онтологија, уредувач на правила, `utils.py`, `helpers.py`, `base.py`, ниту слој што никој не го повикува. Нов дефект се додава во YAML и со тест, не со нова гранка во UI.
