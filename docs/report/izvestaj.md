@@ -162,3 +162,21 @@ sequenceDiagram
 Системот од симптоми стигнува до рангиран дефект и покажува кое правило го донело заклучокот. Тоа е доволно за демонстрација на база на знаење, работна меморија и forward chaining. Границата е што каталогот ги покрива честите дефекти, не секој можен квар на секој уред.
 
 ## 4. Референци
+
+1. Putri Sakinah, Yomei Hendra, Budy Satria, Zumardi Rahman, Fajar Maulana и Aldo Eko Syaputra. Implementation of a Forward Chaining Expert System in Diagnosing Laptop Damage. Internet of Things and Artificial Intelligence Journal, Vol. 4, No. 3, 2024. https://doi.org/10.31763/iota.v4i3.791. Пристапено: 15 октомври 2026.
+   Причина: Го покажува истиот пристап, forward chaining од симптоми до дефект, на близок домен (лаптоп).
+
+2. Muhammad Rehan Anwar. Analysis of Expert System Implementation in Computer Damage Diagnosis with Forward Chaining Method. International Transactions on Artificial Intelligence (ITALIC), Vol. 1, No. 2, May 2023, pp. 139–155. https://doi.org/10.33050/italic.v1i2.213. Пристапено: 15 октомври 2026.
+   Причина: Ја врзува дијагнозата на компјутерски дефект со споредба на фактите со запишани правила.
+
+3. Longfei Song, Yuqing Chen и Zhenjun Jin. Design of fault diagnosis expert system based on fault tree and production rules. Chinese Journal of Ship Research, објавено на 30 јануари 2024. https://www.ship-research.com/en/article/doi/10.19693/j.issn.1673-3185.03608. Пристапено: 15 октомври 2026.
+   Причина: Објаснува како искуството се пренесува во продукциски правила и inference engine, што е обликот на базата во овој проект.
+
+4. Python Software Foundation. dataclasses — Data Classes. Python 3 documentation. https://docs.python.org/3/library/dataclasses.html. Пристапено: 15 октомври 2026.
+   Причина: Доменските типови се непроменливи dataclass-ови, и страницата е изворот за тој договор.
+
+5. Streamlit Inc. Streamlit documentation. https://docs.streamlit.io/. Пристапено: 15 октомври 2026.
+   Причина: Екранот е Streamlit адаптер, а документацијата го опишува начинот на кој се пушта апликацијата.
+
+6. PyYAML. PyYAML Documentation. https://pyyaml.org/wiki/PyYAMLDocumentation. Пристапено: 15 октомври 2026.
+   Причина: Базата на знаење се чита од YAML, а документацијата го покрива `safe_load` што го користи репозиториумот.
