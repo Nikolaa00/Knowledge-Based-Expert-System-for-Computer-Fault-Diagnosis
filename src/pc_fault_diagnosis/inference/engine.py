@@ -19,9 +19,13 @@ PARTIAL_SCORE_THRESHOLD = 0.5
 
 
 class InferenceEngine(Protocol):
-    def catalog(self) -> KnowledgeBase: ...
+    def catalog(self) -> KnowledgeBase:
+        """Return subsystems, symptoms, faults, facts, and rules."""
+        ...
 
-    def infer(self, evidence: Evidence) -> DiagnosisResult: ...
+    def infer(self, evidence: Evidence) -> DiagnosisResult:
+        """Rank faults for the selected symptoms and explain the rules."""
+        ...
 
 
 class ForwardChainingEngine:

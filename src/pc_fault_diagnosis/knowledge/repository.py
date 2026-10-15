@@ -18,10 +18,13 @@ _KEYS = ("subsystems", "symptoms", "faults", "facts", "rules")
 
 
 class KnowledgeRepository(Protocol):
-    def load(self) -> KnowledgeBase: ...
+    def load(self) -> KnowledgeBase:
+        """Return the current knowledge base."""
+        ...
 
 
 class YamlKnowledgeRepository:
+    """Load production rules from a YAML file on every call to ``load``."""
     def __init__(self, path: Path) -> None:
         self._path = path
 

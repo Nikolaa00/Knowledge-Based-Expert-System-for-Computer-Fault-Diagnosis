@@ -12,6 +12,7 @@ class DiagnoseComputer:
         return self._engine.catalog()
 
     def diagnose(self, selected_symptom_ids: Sequence[str]) -> DiagnosisResult:
+        """Return an empty result without calling ``infer`` when nothing is selected."""
         if not selected_symptom_ids:
             return DiagnosisResult(diagnoses=())
         return self._engine.infer(Evidence(frozenset(selected_symptom_ids)))
