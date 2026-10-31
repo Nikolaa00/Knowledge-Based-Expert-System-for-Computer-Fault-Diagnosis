@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: pc-fault-diagnosis
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /_stcore/health
